@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#E4002B"                 # Rosa FIAP (botões, sliders)
+backgroundColor = "#0B0B0B"              # Fundo preto
+secondaryBackgroundColor = "#1E1E1E"     # Cards / caixas
+textColor = "#FFFFFF"                    # Texto branco
+font = "sans serif"
