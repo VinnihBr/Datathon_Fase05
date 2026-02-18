@@ -5,13 +5,15 @@ import xgboost as xgb
 import plotly.express as px
 
 # Configuração da Página
+
 st.set_page_config(
     page_title="Passos Mágicos - Predição de Risco",
     page_icon="🎓",
     layout="wide"
 )
 
-# 1. Carregar Modelo e Encoders
+# Carregar Modelo e Encoders
+
 @st.cache_resource
 def load_assets():
     try:
@@ -25,15 +27,16 @@ def load_assets():
 model, encoders = load_assets()
 
 # Título e Sidebar
+
 st.title("🎓 Sistema de Previsão de Risco - Passos Mágicos")
 st.sidebar.header("Navegação")
 
 # Navegação
+
 page = st.sidebar.radio("Escolha o Modo:", ["🔮 Simulador Individual", "📊 Dashboard & Upload"])
 
-# =========================================================
 # PÁGINA: SIMULADOR INDIVIDUAL
-# =========================================================
+
 if page == "🔮 Simulador Individual":
     st.markdown("### Simulador de Risco Individual")
     st.write("Preencha os dados de um aluno hipotético para verificar a probabilidade de risco.")
@@ -44,11 +47,15 @@ if page == "🔮 Simulador Individual":
 
             with col1:
                 FASE = st.selectbox("FASE", options=encoders['FASE'].classes_)
+                
                 # Visualmente apenas Feminino/Masculino
+                
                 GENERO = st.selectbox("Gênero", options=["Feminino", "Masculino"])
                 
-                # --- FILTRO DAS OPÇÕES DE PEDRA (Removendo sujeira) ---
+                # FILTRO DAS OPÇÕES DE PEDRA
+                
                 # Pega todas as classes aprendidas e remove 'INCLUIR' e 'nan'
+                
                 opcoes_pedra = [p for p in encoders['PEDRA'].classes_ if p not in ['INCLUIR', 'nan']]
                 PEDRA = st.selectbox("PEDRA", options=opcoes_pedra)
 
@@ -78,10 +85,12 @@ if page == "🔮 Simulador Individual":
             })
 
             # Tratamento de Encoders
+            
             input_data['FASE'] = encoders['FASE'].transform(input_data['FASE'])
             input_data['PEDRA'] = encoders['PEDRA'].transform(input_data['PEDRA'])
             
             # Tratamento especial para GENERO
+            
             try:
                 input_data['GENERO'] = encoders['GENERO'].transform(input_data['GENERO'])
             except:
@@ -96,10 +105,12 @@ if page == "🔮 Simulador Individual":
                     input_data['GENERO'] = encoders['GENERO'].transform(genero_convertido)
 
             # Predição
+            
             prob = model.predict_proba(input_data)[0][1]
             risco = prob > 0.5 
 
             # Resultado Visual
+            
             st.markdown("---")
             st.subheader("Resultado da Simulação")
             
@@ -121,9 +132,8 @@ if page == "🔮 Simulador Individual":
                 else:
                     st.info("Recomendação: Monitorar manutenção dos índices atuais.")
 
-# =========================================================
-# PÁGINA: DASHBOARD & UPLOAD (Modo Gestão)
-# =========================================================
+# PÁGINA: DASHBOARD & UPLOAD
+
 elif page == "📊 Dashboard & Upload":
     st.markdown("### Análise em Massa de Alunos")
     st.info("Faça o upload da planilha atual (CSV ou Excel) para identificar alunos em risco.")
@@ -132,7 +142,9 @@ elif page == "📊 Dashboard & Upload":
 
     if uploaded_file and model is not None:
         try:
-            # 1. Leitura Inteligente do Arquivo
+            
+            # Leitura Inteligente do Arquivo
+            
             if uploaded_file.name.endswith('.csv'):
                 df = pd.read_csv(uploaded_file)
             else:
@@ -145,7 +157,8 @@ elif page == "📊 Dashboard & Upload":
                 else:
                     df = pd.read_excel(uploaded_file)
 
-            # 2. Padronização de Colunas
+            # Padronização de Colunas
+            
             mapa_flexivel = {
                 'NOME': ['Nome', 'Nome Anonimizado', 'Nome Aluno'],
                 'FASE': ['Fase', 'FASE'],
@@ -165,17 +178,22 @@ elif page == "📊 Dashboard & Upload":
                         df = df.rename(columns={var: padrao})
                         break 
 
-            # 3. CORREÇÃO DE TIPOS DE DADOS
+            # CORREÇÃO DE TIPOS DE DADOS
+            
             # Converte colunas numéricas que podem estar como texto (ex: "7,5")
+            
             cols_numericas = ['INDE', 'IAA', 'IEG', 'IPS', 'IDA', 'DEFASAGEM']
             
             for col in cols_numericas:
                 if col in df.columns:
+                    
                     # Substitui vírgula por ponto e converte para numérico
+                    
                     df[col] = df[col].astype(str).str.replace(',', '.')
                     df[col] = pd.to_numeric(df[col], errors='coerce')
 
-            # 4. Validar Colunas
+            # Validar Colunas
+            
             features_model = ['FASE', 'GENERO', 'INDE', 'PEDRA', 'IAA', 'IEG', 'IPS', 'IDA', 'DEFASAGEM']
             missing_cols = [col for col in features_model if col not in df.columns]
 
@@ -186,6 +204,7 @@ elif page == "📊 Dashboard & Upload":
                 X_input = df[features_model].copy().dropna()
                 
                 # Encoders
+                
                 for col in ['FASE', 'PEDRA', 'GENERO']:
                     X_input[col] = X_input[col].astype(str).apply(
                         lambda x: encoders[col].transform([x])[0] if x in encoders[col].classes_ else -1
@@ -196,7 +215,9 @@ elif page == "📊 Dashboard & Upload":
                 if len(X_input) == 0:
                     st.warning("Nenhum dado válido para processar após a limpeza. Verifique se as colunas numéricas (INDE, IDA...) contêm números.")
                 else:
+                    
                     # Predição
+                    
                     probs = model.predict_proba(X_input)[:, 1]
                     preds = model.predict(X_input)
 
@@ -204,7 +225,8 @@ elif page == "📊 Dashboard & Upload":
                     df_results['Risco_Predito'] = preds
                     df_results['PROBABILIDADE_RISCO'] = probs
 
-                    # --- EXIBIÇÃO ---
+                    # EXIBIÇÃO
+                    
                     total_alunos = len(df_results)
                     total_risco = df_results['Risco_Predito'].sum()
                     perc_risco = (total_risco / total_alunos) * 100
@@ -217,7 +239,8 @@ elif page == "📊 Dashboard & Upload":
                     st.markdown("---")
                     c1, c2 = st.columns(2)
                     
-                    # Gráfico 1: Risco por Fase (COM RÓTULO)
+                    # Gráfico 1: Risco por Fase
+                    
                     risk_by_phase = df_results[df_results['Risco_Predito'] == 1].groupby('FASE').size().reset_index(name='Contagem')
                     
                     if not risk_by_phase.empty:
@@ -236,7 +259,8 @@ elif page == "📊 Dashboard & Upload":
                     else:
                         c1.info("Parabéns! Nenhum aluno em risco detectado.")
 
-                    # Gráfico 2: Distribuição de Risco (COM RÓTULO)
+                    # Gráfico 2: Distribuição de Risco 
+                    
                     fig_hist = px.histogram(
                         df_results, 
                         x='PROBABILIDADE_RISCO', 
@@ -251,7 +275,8 @@ elif page == "📊 Dashboard & Upload":
                     
                     c2.plotly_chart(fig_hist, use_container_width=True)
 
-                    # --- TABELA FINAL ---
+                    # Tabela com as probabilidades
+                    
                     st.markdown("### 🚨 Lista de Prioridade")
                     
                     cols_show = ['RA', 'NOME', 'FASE', 'INDE', 'DEFASAGEM', 'PROBABILIDADE_RISCO']
@@ -285,4 +310,5 @@ elif page == "📊 Dashboard & Upload":
                     )
 
         except Exception as e:
+
             st.error(f"Erro ao processar o arquivo: {e}")
