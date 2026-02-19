@@ -54,9 +54,7 @@ if page == "🔮 Simulador Individual":
                 
                 # FILTRO DAS OPÇÕES DE PEDRA
                 
-                # Pega todas as classes aprendidas e remove 'INCLUIR' e 'nan'
-                
-                opcoes_pedra = [p for p in encoders['PEDRA'].classes_ if p not in ['INCLUIR', 'nan']]
+                opcoes_pedra = [p for p in encoders['PEDRA'].classes_ if p not in ['nan']]
                 PEDRA = st.selectbox("PEDRA", options=opcoes_pedra)
 
             with col2:
@@ -89,20 +87,12 @@ if page == "🔮 Simulador Individual":
             input_data['FASE'] = encoders['FASE'].transform(input_data['FASE'])
             input_data['PEDRA'] = encoders['PEDRA'].transform(input_data['PEDRA'])
             
-            # Tratamento especial para GENERO
+            # GENERO
             
             try:
                 input_data['GENERO'] = encoders['GENERO'].transform(input_data['GENERO'])
-            except:
-                mapa_genero = {'Feminino': 'Menina', 'Masculino': 'Menino'}
-                genero_convertido = input_data['GENERO'].map(mapa_genero)
-                if genero_convertido.isnull().any():
-                     try:
-                         input_data['GENERO'] = encoders['GENERO'].transform(input_data['GENERO'])
-                     except:
-                         st.error("Erro no encoding de gênero. Verifique os dados.")
-                else:
-                    input_data['GENERO'] = encoders['GENERO'].transform(genero_convertido)
+            except Exception as e:
+                st.error("Erro no encoding de gênero. Certifique-se de que o modelo reconhece as opções 'Feminino' e 'Masculino'.")
 
             # Predição
             
