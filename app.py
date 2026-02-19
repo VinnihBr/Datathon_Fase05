@@ -3,9 +3,9 @@ import pandas as pd
 import joblib
 import xgboost as xgb
 import plotly.express as px
+import re  
 
 # Configuração da Página
-
 st.set_page_config(
     page_title="Passos Mágicos - Predição de Risco",
     page_icon="🎓",
@@ -13,7 +13,6 @@ st.set_page_config(
 )
 
 # Carregar Modelo e Encoders
-
 @st.cache_resource
 def load_assets():
     try:
@@ -27,16 +26,13 @@ def load_assets():
 model, encoders = load_assets()
 
 # Título e Sidebar
-
 st.title("🎓 Sistema de Previsão de Risco - Passos Mágicos")
 st.sidebar.header("Navegação")
 
 # Navegação
-
 page = st.sidebar.radio("Escolha o Modo:", ["🔮 Simulador Individual", "📊 Dashboard & Upload"])
 
 # PÁGINA: SIMULADOR INDIVIDUAL
-
 if page == "🔮 Simulador Individual":
     st.markdown("### Simulador de Risco Individual")
     st.write("Preencha os dados de um aluno hipotético para verificar a probabilidade de risco.")
@@ -47,13 +43,10 @@ if page == "🔮 Simulador Individual":
 
             with col1:
                 FASE = st.selectbox("FASE", options=encoders['FASE'].classes_)
-                
                 # Visualmente apenas Feminino/Masculino
-                
                 GENERO = st.selectbox("Gênero", options=["Feminino", "Masculino"])
                 
                 # FILTRO DAS OPÇÕES DE PEDRA
-                
                 opcoes_pedra = [p for p in encoders['PEDRA'].classes_ if p not in ['nan']]
                 PEDRA = st.selectbox("PEDRA", options=opcoes_pedra)
 
@@ -83,24 +76,15 @@ if page == "🔮 Simulador Individual":
             })
 
             # Tratamento de Encoders
-            
             input_data['FASE'] = encoders['FASE'].transform(input_data['FASE'])
             input_data['PEDRA'] = encoders['PEDRA'].transform(input_data['PEDRA'])
-            
-            # GENERO
-            
-            try:
-                input_data['GENERO'] = encoders['GENERO'].transform(input_data['GENERO'])
-            except Exception as e:
-                st.error("Erro no encoding de gênero. Certifique-se de que o modelo reconhece as opções 'Feminino' e 'Masculino'.")
+            input_data['GENERO'] = encoders['GENERO'].transform(input_data['GENERO'])
 
             # Predição
-            
             prob = model.predict_proba(input_data)[0][1]
             risco = prob > 0.5 
 
             # Resultado Visual
-            
             st.markdown("---")
             st.subheader("Resultado da Simulação")
             
@@ -123,7 +107,6 @@ if page == "🔮 Simulador Individual":
                     st.info("Recomendação: Monitorar manutenção dos índices atuais.")
 
 # PÁGINA: DASHBOARD & UPLOAD
-
 elif page == "📊 Dashboard & Upload":
     st.markdown("### Análise em Massa de Alunos")
     st.info("Faça o upload da planilha atual (CSV ou Excel) para identificar alunos em risco.")
@@ -132,9 +115,7 @@ elif page == "📊 Dashboard & Upload":
 
     if uploaded_file and model is not None:
         try:
-            
-            # Leitura Inteligente do Arquivo
-            
+            # 1. Leitura Inteligente do Arquivo
             if uploaded_file.name.endswith('.csv'):
                 df = pd.read_csv(uploaded_file)
             else:
@@ -147,8 +128,10 @@ elif page == "📊 Dashboard & Upload":
                 else:
                     df = pd.read_excel(uploaded_file)
 
+            # Limpa espaços em branco nos nomes das colunas
+            df.columns = df.columns.str.strip()
+
             # Padronização de Colunas
-            
             mapa_flexivel = {
                 'NOME': ['Nome', 'Nome Anonimizado', 'Nome Aluno'],
                 'FASE': ['Fase', 'FASE'],
@@ -168,22 +151,15 @@ elif page == "📊 Dashboard & Upload":
                         df = df.rename(columns={var: padrao})
                         break 
 
-            # CORREÇÃO DE TIPOS DE DADOS
-            
-            # Converte colunas numéricas que podem estar como texto (ex: "7,5")
-            
+            # CORREÇÃO DE TIPOS DE DADOS E NULOS
             cols_numericas = ['INDE', 'IAA', 'IEG', 'IPS', 'IDA', 'DEFASAGEM']
             
             for col in cols_numericas:
                 if col in df.columns:
-                    
-                    # Substitui vírgula por ponto e converte para numérico
-                    
-                    df[col] = df[col].astype(str).str.replace(',', '.')
+                    df[col] = df[col].astype(str).str.strip().str.replace(',', '.')
                     df[col] = pd.to_numeric(df[col], errors='coerce')
 
-            # Validar Colunas
-            
+            # Validar Colunas e Filtrar Nulos
             features_model = ['FASE', 'GENERO', 'INDE', 'PEDRA', 'IAA', 'IEG', 'IPS', 'IDA', 'DEFASAGEM']
             missing_cols = [col for col in features_model if col not in df.columns]
 
@@ -191,114 +167,150 @@ elif page == "📊 Dashboard & Upload":
                 st.error(f"⚠️ A aba selecionada não possui as colunas necessárias. Faltando: {missing_cols}")
                 st.write("Colunas encontradas:", list(df.columns))
             else:
-                X_input = df[features_model].copy().dropna()
+                X_input_raw = df[features_model].copy()
+                nulos_por_coluna = X_input_raw.isna().sum()
+                X_input = X_input_raw.dropna().copy()
                 
-                # Encoders
-                
-                for col in ['FASE', 'PEDRA', 'GENERO']:
-                    X_input[col] = X_input[col].astype(str).apply(
-                        lambda x: encoders[col].transform([x])[0] if x in encoders[col].classes_ else -1
-                    )
-                
-                X_input = X_input[X_input['FASE'] != -1]
-
                 if len(X_input) == 0:
-                    st.warning("Nenhum dado válido para processar após a limpeza. Verifique se as colunas numéricas (INDE, IDA...) contêm números.")
+                    st.error("🚨 Todos os dados foram excluídos porque faltam informações numéricas na planilha!")
+                    st.dataframe(nulos_por_coluna[nulos_por_coluna > 0].rename("Qtd. de Valores Vazios"))
+                
                 else:
+    
+                    # O "TRADUTOR" - A MÁGICA ACONTECE AQUI
                     
-                    # Predição
-                    
-                    probs = model.predict_proba(X_input)[:, 1]
-                    preds = model.predict(X_input)
+                    # Limpeza inicial
+                    for col in ['FASE', 'PEDRA', 'GENERO']:
+                        X_input[col] = X_input[col].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
 
-                    df_results = df.loc[X_input.index].copy()
-                    df_results['Risco_Predito'] = preds
-                    df_results['PROBABILIDADE_RISCO'] = probs
+                    # Tradutor de Gênero
+                    mapa_genero = {'Menina': 'Feminino', 'Menino': 'Masculino'}
+                    X_input['GENERO'] = X_input['GENERO'].replace(mapa_genero)
 
-                    # EXIBIÇÃO
-                    
-                    total_alunos = len(df_results)
-                    total_risco = df_results['Risco_Predito'].sum()
-                    perc_risco = (total_risco / total_alunos) * 100
+                    # Traduziando as novas fases e 2024 para nosso padrão
+                    def traduzir_fase(fase_val):
+                        fase_str = str(fase_val).strip().upper()
+                        
+                        # Mapeia alfabetização para ALFA
+                        if 'ALFA' in fase_str or fase_str == '0':
+                            return 'ALFA'
+                        
+                        # Extrai apenas os números (ex: 'FASE 1' -> 1, '1A' -> 1)
+                        numeros = re.findall(r'\d+', fase_str)
+                        if numeros:
+                            num = int(numeros[0])
+                            if num == 0:
+                                return 'ALFA'
+                            elif 1 <= num <= 9:
+                                return f"FASE {num}"
+                                
+                        return fase_str 
 
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Total de Alunos Analisados", total_alunos)
-                    col2.metric("Alunos em Risco (Alerta)", int(total_risco), delta_color="inverse")
-                    col3.metric("% da Turma em Risco", f"{perc_risco:.1f}%")
+                    # Aplicando a nova padronização
+                    X_input['FASE'] = X_input['FASE'].apply(traduzir_fase)
 
-                    st.markdown("---")
-                    c1, c2 = st.columns(2)
-                    
-                    # Gráfico 1: Risco por Fase
-                    
-                    risk_by_phase = df_results[df_results['Risco_Predito'] == 1].groupby('FASE').size().reset_index(name='Contagem')
-                    
-                    if not risk_by_phase.empty:
-                        fig_bar = px.bar(
-                            risk_by_phase, 
-                            x='FASE', 
-                            y='Contagem', 
-                            title="Alunos em Risco por Fase", 
-                            color='Contagem', 
-                            color_continuous_scale='Reds',
-                            text='Contagem', 
-                            labels={'FASE': 'Fase', 'Contagem': 'Quantidade de Alunos'}
+                    # Aplica os Encoders agora com os dados traduzidos
+                    for col in ['FASE', 'PEDRA', 'GENERO']:
+                        X_input[col] = X_input[col].apply(
+                            lambda x: encoders[col].transform([x])[0] if x in encoders[col].classes_ else -1
                         )
-                        fig_bar.update_traces(textposition='outside')
-                        c1.plotly_chart(fig_bar, use_container_width=True)
+                    
+                    total_antes_fase = len(X_input)
+                    X_input = X_input[X_input['FASE'] != -1]
+
+                    if len(X_input) == 0:
+                        st.error("🚨 Ocorreu um erro no Encoder. As palavras da planilha não batem com o modelo.")
                     else:
-                        c1.info("Parabéns! Nenhum aluno em risco detectado.")
+                        if len(X_input) < total_antes_fase:
+                            st.warning(f"Atenção: {total_antes_fase - len(X_input)} alunos ignorados por Fase/Pedra desconhecida.")
 
-                    # Gráfico 2: Distribuição de Risco 
-                    
-                    fig_hist = px.histogram(
-                        df_results, 
-                        x='PROBABILIDADE_RISCO', 
-                        nbins=20, 
-                        title="Distribuição de Risco da Turma", 
-                        color_discrete_sequence=['#636EFA'],
-                        text_auto=True,
-                        labels={'PROBABILIDADE_RISCO': 'Probabilidade de Risco (%)', 'count': 'Contagem de Alunos'} 
-                    )
-                    fig_hist.update_layout(yaxis_title="Contagem de Alunos")
-                    fig_hist.update_traces(textposition='outside')
-                    
-                    c2.plotly_chart(fig_hist, use_container_width=True)
+                        # Predição
+                        probs = model.predict_proba(X_input)[:, 1]
+                        preds = model.predict(X_input)
 
-                    # Tabela com as probabilidades
-                    
-                    st.markdown("### 🚨 Lista de Prioridade")
-                    
-                    cols_show = ['RA', 'NOME', 'FASE', 'INDE', 'DEFASAGEM', 'PROBABILIDADE_RISCO']
-                    cols_show = [c for c in cols_show if c in df_results.columns]
+                        df_results = df.loc[X_input.index].copy()
+                        df_results['Risco_Predito'] = preds
+                        df_results['PROBABILIDADE_RISCO'] = probs
 
-                    top_risk = df_results.sort_values('PROBABILIDADE_RISCO', ascending=False)
-                    top_risk = top_risk[cols_show].copy()
+                        # EXIBIÇÃO
+                        total_alunos = len(df_results)
+                        total_risco = df_results['Risco_Predito'].sum()
+                        perc_risco = (total_risco / total_alunos) * 100
 
-                    if 'INDE' in top_risk.columns:
-                        top_risk['INDE'] = top_risk['INDE'].round(2)
-                    
-                    if 'PROBABILIDADE_RISCO' in top_risk.columns:
-                        top_risk['PROBABILIDADE_RISCO'] = top_risk['PROBABILIDADE_RISCO'].round(4)
+                        col1, col2, col3 = st.columns(3)
+                        col1.metric("Total de Alunos Analisados", total_alunos)
+                        col2.metric("Alunos em Risco (Alerta)", int(total_risco), delta_color="inverse")
+                        col3.metric("% da Turma em Risco", f"{perc_risco:.1f}%")
 
-                    st.dataframe(
-                        top_risk.style
-                        .background_gradient(subset=['PROBABILIDADE_RISCO'], cmap='Reds')
-                        .format({
-                            'PROBABILIDADE_RISCO': '{:.2%}', 
-                            'INDE': '{:.2f}'
-                        }),
-                        use_container_width=True
-                    )
+                        st.markdown("---")
+                        c1, c2 = st.columns(2)
+                        
+                        # Gráfico 1
+                        risk_by_phase = df_results[df_results['Risco_Predito'] == 1].groupby('FASE').size().reset_index(name='Contagem')
+                        
+                        if not risk_by_phase.empty:
+                            fig_bar = px.bar(
+                                risk_by_phase, 
+                                x='FASE', 
+                                y='Contagem', 
+                                title="Alunos em Risco por Fase", 
+                                color='Contagem', 
+                                color_continuous_scale='Reds',
+                                text='Contagem', 
+                                labels={'FASE': 'Fase', 'Contagem': 'Quantidade de Alunos'}
+                            )
+                            fig_bar.update_traces(textposition='outside')
+                            c1.plotly_chart(fig_bar, use_container_width=True)
+                        else:
+                            c1.info("Parabéns! Nenhum aluno em risco detectado.")
 
-                    csv = top_risk.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label="📥 Baixar Relatório Completo (CSV)",
-                        data=csv,
-                        file_name='relatorio_risco_passos_magicos.csv',
-                        mime='text/csv',
-                    )
+                        # Gráfico 2
+                        fig_hist = px.histogram(
+                            df_results, 
+                            x='PROBABILIDADE_RISCO', 
+                            nbins=20, 
+                            title="Distribuição de Risco da Turma", 
+                            color_discrete_sequence=['#636EFA'],
+                            text_auto=True,
+                            labels={'PROBABILIDADE_RISCO': 'Probabilidade de Risco (%)', 'count': 'Contagem de Alunos'} 
+                        )
+                        fig_hist.update_layout(yaxis_title="Contagem de Alunos")
+                        fig_hist.update_traces(textposition='outside')
+                        
+                        c2.plotly_chart(fig_hist, use_container_width=True)
+
+                        # TABELA FINAL
+                        st.markdown("### 🚨 Lista de Prioridade")
+                        
+                        cols_show = ['RA', 'NOME', 'FASE', 'INDE', 'DEFASAGEM', 'PROBABILIDADE_RISCO']
+                        cols_show = [c for c in cols_show if c in df_results.columns]
+
+                        top_risk = df_results.sort_values('PROBABILIDADE_RISCO', ascending=False)
+                        top_risk = top_risk[cols_show].copy()
+
+                        if 'INDE' in top_risk.columns:
+                            top_risk['INDE'] = top_risk['INDE'].round(2)
+                        
+                        if 'PROBABILIDADE_RISCO' in top_risk.columns:
+                            top_risk['PROBABILIDADE_RISCO'] = top_risk['PROBABILIDADE_RISCO'].round(4)
+
+                        st.dataframe(
+                            top_risk.style
+                            .background_gradient(subset=['PROBABILIDADE_RISCO'], cmap='Reds')
+                            .format({
+                                'PROBABILIDADE_RISCO': '{:.2%}', 
+                                'INDE': '{:.2f}'
+                            }),
+                            use_container_width=True
+                        )
+
+                        csv = top_risk.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="📥 Baixar Relatório Completo (CSV)",
+                            data=csv,
+                            file_name='relatorio_risco_passos_magicos.csv',
+                            mime='text/csv',
+                        )
 
         except Exception as e:
-
             st.error(f"Erro ao processar o arquivo: {e}")
