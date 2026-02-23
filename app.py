@@ -82,7 +82,7 @@ if page == "🔮 Simulador Individual":
 
             # Predição
             prob = model.predict_proba(input_data)[0][1]
-            risco = prob > 0.5 
+            risco = prob > 0.41
 
             # Resultado Visual
             st.markdown("---")
@@ -226,7 +226,7 @@ elif page == "📊 Dashboard & Upload":
 
                         # Predição
                         probs = model.predict_proba(X_input)[:, 1]
-                        preds = model.predict(X_input)
+                        preds = (probs >= 0.41).astype(int)
 
                         df_results = df.loc[X_input.index].copy()
                         df_results['Risco_Predito'] = preds
