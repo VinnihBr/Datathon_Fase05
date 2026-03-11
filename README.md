@@ -57,8 +57,6 @@ Nossa análise exploratória revelou insights vitais para o negócio:
 - **O Efeito Fadiga:** Analisando a jornada do aluno, descobrimos que o engajamento (IEG) e a conquista de pedras de topo caem vertiginosamente do Ano 0 para o Ano 3 na instituição, devido ao aumento da dificuldade escolar.
 - **Recomendação:** A criação de um "Programa de Padrinhos", onde veteranos de alta performance mentorem os alunos no seu 2º e 3º ano para blindar o engajamento na fase mais crítica de evasão.
 
----
-
 # Executando o Projeto Localmente no VS Code
 
 Como configurar o ambiente e executar a aplicação Streamlit localmente utilizando o Visual Studio Code.
