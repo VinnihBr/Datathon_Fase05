@@ -99,7 +99,6 @@ Colocar todos os arquivos dentro de uma pasta para facilitar dentro do VS Code.
 
 ## **Dentro do VS Code:**
 
----
 
 Criar e Ativar Ambiente Virtual (Recomendado)
 
@@ -130,7 +129,6 @@ Selecione Python: Select Interpreter
 
 **Escolha o interpretador do ambiente virtual:**
 
----
 
 venv\Scripts\python.exe (Windows)
 
@@ -150,8 +148,6 @@ E agora você já pode usar a aplicação.
 **Link da Aplicação no Streamlit Cloud:(https://datathon-fase05.streamlit.app/)**
 
 ## **Autores**
-
----
 
 Bruno de Andrade
 
