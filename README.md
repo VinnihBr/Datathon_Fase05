@@ -95,7 +95,8 @@ Arquivos: app.py, requirements.txt
 
 Colocar todos os arquivos dentro de uma pasta para facilitar dentro do VS Code.
 
-Dentro do VS Code:
+**Dentro do VS Code:**
+
 Criar e Ativar Ambiente Virtual (Recomendado)
 
 Windows
@@ -123,7 +124,7 @@ Pressione Ctrl + Shift + P
 
 Selecione Python: Select Interpreter
 
-Escolha o interpretador do ambiente virtual:
+**Escolha o interpretador do ambiente virtual:**
 
 venv\Scripts\python.exe (Windows)
 
@@ -140,13 +141,14 @@ O Streamlit iniciará um servidor local e o navegador abrirá automaticamente em
 
 E agora você já pode usar a aplicação.
 
-Link da Aplicação no Streamlit Cloud:(https://datathon-fase05.streamlit.app/)
+**Link da Aplicação no Streamlit Cloud:(https://datathon-fase05.streamlit.app/)**
 
 Autores
-Vinicius Dias
 
 Bruno de Andrade
 
 João Pedro
+
+Vinicius Dias
 
 Pós-Graduação em Data Analytics – FIAP
