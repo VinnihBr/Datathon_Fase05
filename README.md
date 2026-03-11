@@ -31,12 +31,15 @@ Foi desenvolvido um modelo de **Machine Learning (XGBoost Classifier)** para ide
 - **Engenharia de Recursos:** Criação de variáveis de "Tempo de Casa" e tradutores automáticos de strings para lidar com bases despadronizadas.
 
 Principais bibliotecas utilizadas:
-- pandas
-- numpy (< 2.0.0)
-- scikit-learn
-- xgboost
-- plotly
-- matplotlib
+- pandas==2.2.2
+- numpy<2.0.0
+- matplotlib==3.10.0
+- scikit-learn==1.6.1
+- xgboost==3.1.3
+- joblib==1.5.3
+- streamlit>=1.40.0
+- plotly==6.5.2
+-- openpyxl==3.1.5
 
 ## Aplicação Web – Streamlit
 
