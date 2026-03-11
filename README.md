@@ -39,7 +39,7 @@ Principais bibliotecas utilizadas:
 - joblib==1.5.3
 - streamlit>=1.40.0
 - plotly==6.5.2
--- openpyxl==3.1.5
+- openpyxl==3.1.5
 
 ## Aplicação Web – Streamlit
 
