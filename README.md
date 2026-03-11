@@ -1,4 +1,4 @@
-# Datathon_Fase05
+# Datathon Fase05
 
 ## Sistema de Previsão de Risco e Análise Educacional - ONG Passos Mágicos
 
@@ -75,6 +75,8 @@ https://code.visualstudio.com/
 
 **Extensão Python no VS Code (Microsoft)**
 
+---
+
 - Para verificar a versão do Python:
 
 bash
@@ -95,7 +97,9 @@ Arquivos: app.py, requirements.txt
 
 Colocar todos os arquivos dentro de uma pasta para facilitar dentro do VS Code.
 
-**Dentro do VS Code:**
+## **Dentro do VS Code:**
+
+---
 
 Criar e Ativar Ambiente Virtual (Recomendado)
 
@@ -126,6 +130,8 @@ Selecione Python: Select Interpreter
 
 **Escolha o interpretador do ambiente virtual:**
 
+---
+
 venv\Scripts\python.exe (Windows)
 
 venv/bin/python (macOS/Linux)
@@ -143,7 +149,9 @@ E agora você já pode usar a aplicação.
 
 **Link da Aplicação no Streamlit Cloud:(https://datathon-fase05.streamlit.app/)**
 
-Autores
+## **Autores**
+
+---
 
 Bruno de Andrade
 
