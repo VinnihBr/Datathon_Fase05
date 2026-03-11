@@ -75,8 +75,6 @@ https://code.visualstudio.com/
 
 **Extensão Python no VS Code (Microsoft)**
 
----
-
 - Para verificar a versão do Python:
 
 bash
